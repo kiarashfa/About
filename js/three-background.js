@@ -1,23 +1,20 @@
 // ===========================
-// DEEP NEURAL NETWORK BACKGROUND (THREE.JS) - DEBUG VERSION
+// DEEP NEURAL NETWORK BACKGROUND - FULL SCREEN
 // ===========================
 import * as THREE from "three";
 
 export function initThreeJS() {
-  console.log("🧠 Neural Network Background: Starting initialization...");
+  console.log("🧠 Neural Network Background: Initializing full-screen network...");
 
   // --- SCENE, CAMERA, RENDERER ---
   const scene = new THREE.Scene();
-  console.log("✓ Scene created");
-
   const camera = new THREE.PerspectiveCamera(
-    60,
+    75, // Wider FOV for more dramatic perspective
     window.innerWidth / window.innerHeight,
     0.1,
     1000
   );
-  camera.position.set(0, 0, 40);
-  console.log("✓ Camera positioned at:", camera.position);
+  camera.position.set(0, 0, 20); // Closer to the network
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -29,73 +26,116 @@ export function initThreeJS() {
     return;
   }
   container.appendChild(renderer.domElement);
-  console.log("✓ Renderer attached to DOM");
+  console.log("✓ Renderer attached");
 
   // --- NETWORK STRUCTURE PARAMETERS ---
-  const layers = 8;
-  const nodesPerLayer = 40;
-  const layerSpacing = 8;
-  const nodeRadius = 0.3;
+  const layers = 6; // Fewer layers but more spread out
+  const nodesPerLayer = 50; // More nodes per layer
+  const layerSpacing = 12; // More space between layers
+  const nodeRadius = 0.25;
+  
+  // Calculate spread based on viewport to fill screen
+  const aspectRatio = window.innerWidth / window.innerHeight;
+  const spreadX = 35 * aspectRatio; // Horizontal spread adapts to screen width
+  const spreadY = 35; // Vertical spread
+  const spreadZ = 50; // Deep spread front-to-back
 
   const nodes = [];
   const connections = [];
 
-  console.log(`Creating ${layers} layers with ${nodesPerLayer} nodes each...`);
+  console.log(`Spread: X=${spreadX}, Y=${spreadY}, Z=${spreadZ}`);
 
   // --- NODE GEOMETRY + MATERIAL ---
-  const nodeGeometry = new THREE.SphereGeometry(nodeRadius, 12, 12);
+  const nodeGeometry = new THREE.SphereGeometry(nodeRadius, 16, 16);
   const nodeMaterial = new THREE.MeshBasicMaterial({
-    color: 0x00ffff,
+    color: 0x49c5b6,
     transparent: true,
     opacity: 0.8,
   });
 
-  // --- CREATE NODES ---
+  // --- CREATE NODES IN LAYERS (with wide distribution) ---
   for (let l = 0; l < layers; l++) {
-    const radius = 6;
+    const layerProgress = l / (layers - 1); // 0 to 1
+    
     for (let i = 0; i < nodesPerLayer; i++) {
-      const x = (Math.random() - 0.5) * radius * 2;
-      const y = (Math.random() - 0.5) * radius * 2;
-      const z = l * layerSpacing - (layers * layerSpacing) / 2;
+      // Distribute widely across screen with some clustering
+      const clusterX = (Math.random() - 0.5) * 0.3;
+      const clusterY = (Math.random() - 0.5) * 0.3;
+      
+      const x = (Math.random() - 0.5 + clusterX) * spreadX;
+      const y = (Math.random() - 0.5 + clusterY) * spreadY;
+      const z = layerProgress * spreadZ - spreadZ / 2;
       
       const node = new THREE.Mesh(nodeGeometry, nodeMaterial.clone());
       node.position.set(x, y, z);
-      node.material.color.setHSL(0.5 + Math.random() * 0.1, 1.0, 0.6);
-      node.userData = { activation: Math.random() * 0.5, layer: l };
+      
+      // Color gradient from cyan to pink based on depth
+      const hue = 0.5 + layerProgress * 0.1; // Cyan to slightly pink
+      node.material.color.setHSL(hue, 1.0, 0.6);
+      
+      node.userData = {
+        activation: Math.random(),
+        layer: l,
+        baseScale: 0.8 + Math.random() * 0.4, // Vary sizes
+        pulseOffset: Math.random() * Math.PI * 2
+      };
       
       scene.add(node);
       nodes.push(node);
     }
   }
 
-  console.log(`✓ Created ${nodes.length} nodes`);
+  console.log(`✓ Created ${nodes.length} nodes across ${layers} layers`);
 
-  // --- CREATE CONNECTIONS ---
+  // --- CREATE CONNECTIONS (Connect nearby nodes + some cross-layer) ---
   const connectionMaterial = new THREE.LineBasicMaterial({
     vertexColors: true,
     transparent: true,
     blending: THREE.AdditiveBlending,
-    opacity: 0.35,
+    opacity: 0.25,
   });
 
   const positions = [];
   const colors = [];
+  const maxDistance = 15; // Max distance for connections
+  const connectionProbability = 0.15; // Lower probability for cleaner look
 
-  for (let l = 0; l < layers - 1; l++) {
-    const current = nodes.filter((n) => n.userData.layer === l);
-    const next = nodes.filter((n) => n.userData.layer === l + 1);
+  // Connect nodes within same layer and adjacent layers
+  for (let i = 0; i < nodes.length; i++) {
+    const nodeA = nodes[i];
+    let connectionCount = 0;
+    const maxConnectionsPerNode = 8;
     
-    for (let a of current) {
-      for (let b of next) {
-        if (Math.random() < 0.2) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      if (connectionCount >= maxConnectionsPerNode) break;
+      
+      const nodeB = nodes[j];
+      const layerDiff = Math.abs(nodeA.userData.layer - nodeB.userData.layer);
+      
+      // Only connect within same layer or adjacent layers
+      if (layerDiff <= 1) {
+        const distance = nodeA.position.distanceTo(nodeB.position);
+        
+        if (distance < maxDistance && Math.random() < connectionProbability) {
           positions.push(
-            a.position.x, a.position.y, a.position.z,
-            b.position.x, b.position.y, b.position.z
+            nodeA.position.x, nodeA.position.y, nodeA.position.z,
+            nodeB.position.x, nodeB.position.y, nodeB.position.z
           );
           
-          const c = new THREE.Color(0x49c5b6);
-          colors.push(c.r, c.g, c.b, c.r, c.g, c.b);
-          connections.push({ a, b, signal: Math.random() });
+          // Connection color based on layer
+          const avgLayer = (nodeA.userData.layer + nodeB.userData.layer) / 2;
+          const hue = 0.5 + (avgLayer / layers) * 0.1;
+          const color = new THREE.Color().setHSL(hue, 1.0, 0.6);
+          colors.push(color.r, color.g, color.b, color.r, color.g, color.b);
+          
+          connections.push({
+            a: nodeA,
+            b: nodeB,
+            signal: Math.random(),
+            strength: 1.0 - (distance / maxDistance)
+          });
+          
+          connectionCount++;
         }
       }
     }
@@ -132,7 +172,11 @@ export function initThreeJS() {
 
   // --- ANIMATION LOOP ---
   const clock = new THREE.Clock();
-  let frameCount = 0;
+  let scrollY = 0;
+  
+  window.addEventListener('scroll', () => {
+    scrollY = window.scrollY;
+  });
 
   function animate() {
     requestAnimationFrame(animate);
@@ -140,77 +184,82 @@ export function initThreeJS() {
     const t = clock.getElapsedTime();
     const delta = clock.getDelta();
 
-    // Log first frame to confirm animation is running
-    if (frameCount === 0) {
-      console.log("✓ Animation loop started!");
-    }
-    frameCount++;
-
-    // Update node glow + hover attraction
+    // Update nodes
     nodes.forEach((node) => {
+      // Mouse attraction effect (stronger)
+      const screenX = mouse.x * spreadX * 0.4;
+      const screenY = mouse.y * spreadY * 0.4;
       const dist = Math.sqrt(
-        Math.pow(node.position.x - mouse.x * 20, 2) +
-        Math.pow(node.position.y - mouse.y * 10, 2)
+        Math.pow(node.position.x - screenX, 2) +
+        Math.pow(node.position.y - screenY, 2)
       );
-      const influence = Math.max(0, 1 - dist / 10);
-      node.scale.setScalar(1 + influence * 0.5);
+      const influence = Math.max(0, 1 - dist / 20);
+      const baseScale = node.userData.baseScale;
+      node.scale.setScalar(baseScale * (1 + influence * 0.6));
 
-      // Pulsating color
-      const a = node.userData.activation;
-      const intensity = Math.sin(t * 3 + a * 5) * 0.5 + 0.5;
-      node.material.color.lerpColors(signalColorA, signalColorB, intensity);
-      node.material.opacity = 0.6 + intensity * 0.3;
+      // Pulsating color and glow
+      const pulseSpeed = 2 + node.userData.activation * 2;
+      const intensity = Math.sin(t * pulseSpeed + node.userData.pulseOffset) * 0.5 + 0.5;
+      node.material.color.lerpColors(signalColorA, signalColorB, intensity * 0.3);
+      node.material.opacity = 0.5 + intensity * 0.4;
+      
+      // Subtle floating animation
+      node.position.y += Math.sin(t + node.userData.pulseOffset) * 0.002;
     });
 
-    // Update connections
-    const pos = connectionGeometry.attributes.position.array;
+    // Update connection colors (signal flow)
     const col = connectionGeometry.attributes.color.array;
-
+    
     for (let i = 0; i < connections.length; i++) {
-      const c = connections[i];
-      c.signal += delta * 2;
-      if (c.signal > 1) c.signal = 0;
+      const conn = connections[i];
+      conn.signal += delta * 1.5;
+      if (conn.signal > 1) conn.signal = 0;
 
-      const colorPhase = (Math.sin(t * 5 + i) + 1) / 2;
-      const mixColor = new THREE.Color().lerpColors(
+      // Create traveling pulse effect
+      const pulsePos = conn.signal;
+      const pulseWidth = 0.2;
+      const pulseIntensity = Math.max(0, 1 - Math.abs(pulsePos - 0.5) / pulseWidth);
+      
+      const colorPhase = (Math.sin(t * 3 + i * 0.1) + 1) / 2;
+      const baseColor = new THREE.Color().lerpColors(
         signalColorA,
         signalColorB,
         colorPhase
       );
+      
+      // Brighten where pulse is
+      const brightColor = baseColor.clone().multiplyScalar(1 + pulseIntensity * 2);
 
       const bi = i * 6;
-      col[bi] = mixColor.r;
-      col[bi + 1] = mixColor.g;
-      col[bi + 2] = mixColor.b;
-      col[bi + 3] = mixColor.r;
-      col[bi + 4] = mixColor.g;
-      col[bi + 5] = mixColor.b;
-
-      // Vibrate connections
-      pos[bi] = c.a.position.x + Math.sin(t * 3 + i) * 0.02;
-      pos[bi + 1] = c.a.position.y + Math.cos(t * 3 + i) * 0.02;
-      pos[bi + 3] = c.b.position.x + Math.sin(t * 3 + i) * 0.02;
-      pos[bi + 4] = c.b.position.y + Math.cos(t * 3 + i) * 0.02;
+      col[bi] = brightColor.r * conn.strength;
+      col[bi + 1] = brightColor.g * conn.strength;
+      col[bi + 2] = brightColor.b * conn.strength;
+      col[bi + 3] = brightColor.r * conn.strength;
+      col[bi + 4] = brightColor.g * conn.strength;
+      col[bi + 5] = brightColor.b * conn.strength;
     }
 
-    connectionGeometry.attributes.position.needsUpdate = true;
     connectionGeometry.attributes.color.needsUpdate = true;
 
-    // Rotate slowly
-    scene.rotation.y = Math.sin(t * 0.1) * 0.2;
-    scene.rotation.x = Math.cos(t * 0.05) * 0.1;
+    // Gentle rotation for 3D depth perception
+    scene.rotation.y = Math.sin(t * 0.05) * 0.15;
+    scene.rotation.x = Math.cos(t * 0.03) * 0.08;
+
+    // Camera responds to scroll
+    camera.position.y = -scrollY * 0.003;
+    camera.position.x = Math.sin(mouse.x * 0.3) * 2;
+    camera.lookAt(0, camera.position.y, 0);
 
     renderer.render(scene, camera);
   }
 
   animate();
-  console.log("🎬 Animation started - you should see the network now!");
+  console.log("🎬 Full-screen neural network is live!");
 
   // --- RESIZE HANDLER ---
   window.addEventListener("resize", () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-    console.log("📐 Window resized");
   });
 }
