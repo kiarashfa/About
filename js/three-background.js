@@ -1,6 +1,6 @@
 // ===========================
 // THREE.JS NEURAL NETWORK BACKGROUND
-// OPTIMIZED VERSION
+// NO CLICK VERSION - PERFORMANCE TEST
 // ===========================
 import * as THREE from 'three';
 
@@ -22,12 +22,12 @@ export function initThreeJS() {
     // ===========================
     // NEURAL NETWORK PARAMETERS
     // ===========================
-    const nodeCount = 200; // Reduced for better performance
+    const nodeCount = 300;
     const connectionDistance = 3.5;
-    const maxConnections = 6; // Reduced connections
+    const maxConnections = 8;
     const signalSpeed = 2.0;
-    const maxActiveSignals = 30; // Limit active signals
-    const autoSignalInterval = 3000; // Slower auto-fire
+    const maxActiveSignals = 20; // Keep it limited
+    const autoSignalInterval = 3000;
 
     // ===========================
     // CREATE NODES (NEURONS)
@@ -164,7 +164,7 @@ export function initThreeJS() {
                     end: new THREE.Vector3(nodeB.x, nodeB.y, nodeB.z),
                     distance: distance,
                     strength: 1.0 - (distance / connectionDistance),
-                    activeSignals: [] // Track signals on this connection
+                    activeSignals: []
                 };
                 
                 connections.push(connection);
@@ -206,7 +206,7 @@ export function initThreeJS() {
     scene.add(connectionLines);
 
     // ===========================
-    // OPTIMIZED SIGNAL SYSTEM
+    // SIGNAL SYSTEM
     // ===========================
     
     class Signal {
@@ -231,9 +231,8 @@ export function initThreeJS() {
                     this.connection.endNode : 
                     this.connection.startNode;
                 
-                // Only propagate if we have room for more signals
                 if (activeSignals.length < maxActiveSignals) {
-                    activateNode(targetNode, false);
+                    activateNode(targetNode);
                 }
                 
                 return false;
@@ -245,11 +244,11 @@ export function initThreeJS() {
 
     const activeSignals = [];
 
-    function activateNode(node, isManual = false) {
+    function activateNode(node) {
         node.activation = 1.0;
         
         // Limit propagation
-        const maxNewSignals = Math.min(node.connections.length, 3);
+        const maxNewSignals = Math.min(node.connections.length, 2);
         
         for (let i = 0; i < maxNewSignals; i++) {
             if (activeSignals.length >= maxActiveSignals) break;
@@ -262,41 +261,9 @@ export function initThreeJS() {
             conn.activeSignals.push(signal);
             activeSignals.push(signal);
         }
-        
-        if (isManual) {
-            createBurstEffect(node);
-        }
     }
 
-    function createBurstEffect(node) {
-        const burstGeometry = new THREE.SphereGeometry(0.5, 8, 8);
-        const burstMaterial = new THREE.MeshBasicMaterial({
-            color: 0xFF9398,
-            transparent: true,
-            opacity: 0.6
-        });
-        const burst = new THREE.Mesh(burstGeometry, burstMaterial);
-        burst.position.set(node.x, node.y, node.z);
-        scene.add(burst);
-        
-        let life = 0;
-        const animate = () => {
-            life += 0.05;
-            burst.scale.setScalar(1 + life * 2);
-            burst.material.opacity = Math.max(0, 0.6 - life);
-            
-            if (burst.material.opacity > 0.01) {
-                requestAnimationFrame(animate);
-            } else {
-                scene.remove(burst);
-                burst.geometry.dispose();
-                burst.material.dispose();
-            }
-        };
-        animate();
-    }
-
-    // Auto-fire with throttling
+    // Auto-fire
     let lastAutoFire = 0;
     function autoFireSignal(currentTime) {
         if (currentTime - lastAutoFire > autoSignalInterval && activeSignals.length < maxActiveSignals) {
@@ -306,7 +273,7 @@ export function initThreeJS() {
         }
     }
 
-    // Start with fewer initial signals
+    // Start with initial signals
     for (let i = 0; i < 3; i++) {
         const randomNode = nodeArray[Math.floor(Math.random() * nodeArray.length)];
         activateNode(randomNode);
@@ -315,14 +282,13 @@ export function initThreeJS() {
     // ===========================
     // POOLED SIGNAL GEOMETRY
     // ===========================
-    const maxSignalLines = 50;
+    const maxSignalLines = 30;
     const signalGeometries = [];
     const signalMeshes = [];
     
-    // Pre-create signal line pool
     for (let i = 0; i < maxSignalLines; i++) {
         const geometry = new THREE.BufferGeometry();
-        const positions = new Float32Array(6); // 2 points * 3 coords
+        const positions = new Float32Array(6);
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         
         const material = new THREE.LineBasicMaterial({
@@ -356,7 +322,7 @@ export function initThreeJS() {
                 const positions = geometry.attributes.position.array;
                 
                 // Calculate trail
-                const trailLength = 0.2;
+                const trailLength = 0.15;
                 const start = Math.max(0, signal.progress - trailLength);
                 const end = signal.progress;
                 
@@ -385,39 +351,17 @@ export function initThreeJS() {
     }
 
     // ===========================
-    // MOUSE INTERACTION
+    // MOUSE INTERACTION (NO CLICK)
     // ===========================
     const mouse = new THREE.Vector2();
-    const raycaster = new THREE.Raycaster();
-    raycaster.params.Points.threshold = 0.5;
     
     window.addEventListener('mousemove', (event) => {
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     });
 
-    let clicking = false;
-    window.addEventListener('click', (event) => {
-        if (clicking) return;
-        clicking = true;
-        
-        const clickMouse = new THREE.Vector2();
-        clickMouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        clickMouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-        raycaster.setFromCamera(clickMouse, camera);
-        const intersects = raycaster.intersectObject(nodes);
-
-        if (intersects.length > 0) {
-            const intersectedIndex = intersects[0].index;
-            const clickedNode = nodeArray[intersectedIndex];
-            
-            console.log(`Node ${intersectedIndex} activated!`);
-            activateNode(clickedNode, true);
-        }
-        
-        setTimeout(() => { clicking = false; }, 100);
-    });
+    // CLICK DISABLED FOR TESTING
+    console.log('Click interaction disabled for performance testing');
 
     // ===========================
     // ANIMATION LOOP
@@ -433,7 +377,7 @@ export function initThreeJS() {
         requestAnimationFrame(animate);
         
         const elapsedTime = clock.getElapsedTime();
-        const deltaTime = Math.min(clock.getDelta(), 0.1); // Cap delta time
+        const deltaTime = Math.min(clock.getDelta(), 0.1);
         
         // Update nodes
         nodesMaterial.uniforms.uTime.value = elapsedTime;
