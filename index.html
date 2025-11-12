@@ -154,6 +154,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            transform: none !important;
         }
 
         /* Contact Links */
@@ -443,7 +444,7 @@
         <!-- About Section -->
         <section class="section">
             <div class="section-container">
-                <h2 class="section-title parallax-fast">About Me</h2>
+                <h2 class="section-title">About Me</h2>
                 <div class="glass-card">
                     <p style="font-size: 1.1rem; line-height: 1.8; opacity: 0.9;">
                         I am a PhD candidate at the University of the Basque Country (UPV/EHU), working at POLYMAT 
@@ -460,7 +461,7 @@
         <!-- Contact Section -->
         <section class="section">
             <div class="section-container">
-                <h2 class="section-title parallax-fast">Connect With Me</h2>
+                <h2 class="section-title">Connect With Me</h2>
                 <div class="glass-card">
                     <div class="info-grid">
                         <div class="info-item">
@@ -472,7 +473,7 @@
                         <div class="info-item">
                             <i class="fas fa-envelope"></i>
                             <div class="info-label">Email</div>
-                            <div class="info-value">KiarashFa@Gmail.com</div>
+                            <div class="info-value"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d49fbdb5a6b5a7bc92b59493b9b5bdb8fab7bbb9">[email&#160;protected]</a></div>
                         </div>
                         
                         <div class="info-item">
@@ -520,7 +521,7 @@
         <!-- Research Section -->
         <section class="section">
             <div class="section-container">
-                <h2 class="section-title parallax-fast">Research Focus</h2>
+                <h2 class="section-title">Research Focus</h2>
                 <div class="glass-card">
                     <div class="info-grid">
                         <div class="info-item">
@@ -548,7 +549,7 @@
         <!-- Expertise Section -->
         <section class="section">
             <div class="section-container">
-                <h2 class="section-title parallax-fast">Core Expertise</h2>
+                <h2 class="section-title">Core Expertise</h2>
                 <div class="glass-card">
                     <div class="expertise-grid">
                         <span class="tag">Machine Learning</span>
@@ -573,7 +574,7 @@
         <!-- Impact Section -->
         <section class="section">
             <div class="section-container">
-                <h2 class="section-title parallax-fast">Research Impact</h2>
+                <h2 class="section-title">Research Impact</h2>
                 <div class="glass-card">
                     <div class="stats-grid">
                         <div class="stat-card">
@@ -617,7 +618,7 @@
     </div>
 
     <!-- Three.js Implementation -->
-    <script type="importmap">
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="importmap">
     {
         "imports": {
             "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
@@ -639,8 +640,8 @@
         });
 
         function animateCursor() {
-            cursorX += (mouseX - cursorX) * 0.1;
-            cursorY += (mouseY - cursorY) * 0.1;
+            cursorX += (mouseX - cursorX) * 0.25;
+            cursorY += (mouseY - cursorY) * 0.25;
             cursor.style.left = cursorX + 'px';
             cursor.style.top = cursorY + 'px';
             requestAnimationFrame(animateCursor);
@@ -904,12 +905,4 @@
             setTimeout(() => {
                 document.getElementById('citations-count').textContent = '50+';
                 document.getElementById('h-index').textContent = '4';
-                document.getElementById('i10-index').textContent = '3';
-                document.getElementById('publications-count').textContent = '8';
-            }, 800);
-        }
-
-        window.addEventListener('DOMContentLoaded', fetchScholarData);
-    </script>
-</body>
-</html>
+                document.getElementById('i10-index').tex
