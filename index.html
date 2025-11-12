@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Kiarash Farajzadehahary - Polymer Scientist and Machine Learning Researcher">
     <meta name="author" content="Kiarash Farajzadehahary">
-    <meta name="keywords" content="polymer science, machine learning, emulsion polymerization, AI, research">
-    <title>Kiarash Farajzadehahary | About</title>
+    <title>Kiarash Farajzadehahary | Polymer Scientist & ML Researcher</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -15,551 +14,901 @@
             box-sizing: border-box;
         }
 
-        :root {
-            --primary-color: #00008B;
-            --secondary-color: #1e3a8a;
-            --accent-color: #3b82f6;
-            --text-dark: #1f2937;
-            --text-light: #6b7280;
-            --bg-gradient-start: #0f172a;
-            --bg-gradient-end: #1e293b;
-            --card-bg: #ffffff;
-            --shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            overflow-x: hidden;
+            background: #000;
+            color: #fff;
+            cursor: none;
         }
 
-        body {
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-            line-height: 1.6;
-            color: var(--text-dark);
-            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
-            min-height: 100vh;
+        /* Custom Cursor */
+        .cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #49c5b6;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            transition: transform 0.15s ease;
+            mix-blend-mode: difference;
+        }
+
+        .cursor.active {
+            transform: scale(1.5);
+            border-color: #FF9398;
+        }
+
+        /* 3D Canvas Background */
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Content Container */
+        .content {
+            position: relative;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
             padding: 20px;
         }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            animation: fadeIn 0.8s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 24px;
-            padding: 50px;
-            box-shadow: var(--shadow);
-            margin-bottom: 30px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 6px;
-            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
-        }
-
-        .header-section {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .name {
-            font-size: 3.5em;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+        h1 {
+            font-size: 5rem;
+            font-weight: 100;
+            letter-spacing: 0.2em;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #49c5b6 0%, #FF9398 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 15px;
-            letter-spacing: -1px;
+            animation: glow 3s ease-in-out infinite;
         }
 
-        .title {
-            font-size: 1.5em;
-            color: var(--text-light);
+        @keyframes glow {
+            0%, 100% { filter: drop-shadow(0 0 20px rgba(73, 197, 182, 0.5)); }
+            50% { filter: drop-shadow(0 0 40px rgba(255, 147, 152, 0.5)); }
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            font-weight: 200;
+            letter-spacing: 0.3em;
+            opacity: 0.8;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+        }
+
+        .hero-description {
+            font-size: 1.1rem;
             font-weight: 300;
-            margin-bottom: 25px;
-            letter-spacing: 0.5px;
-        }
-
-        .summary {
-            font-size: 1.1em;
+            max-width: 700px;
             line-height: 1.8;
-            color: var(--text-dark);
-            max-width: 750px;
-            margin: 0 auto 30px;
-            text-align: center;
+            opacity: 0.7;
+            margin-bottom: 3rem;
         }
 
-        .divider {
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
-            margin: 40px 0;
+        /* Glass Card */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: auto;
+            cursor: none;
+            transition: all 0.5s ease;
+            opacity: 0;
+            transform: translateY(50px);
         }
 
+        .glass-card.reveal {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(73, 197, 182, 0.3);
+            transform: translateY(-10px);
+            box-shadow: 0 20px 60px rgba(73, 197, 182, 0.2);
+        }
+
+        /* Section Styling */
+        .section {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem 2rem;
+        }
+
+        .section-container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .section-title {
+            font-size: 3rem;
+            font-weight: 100;
+            letter-spacing: 0.2em;
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #49c5b6, #FF9398);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Contact Links */
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .contact-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.2rem 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            color: #fff;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            pointer-events: auto;
+            cursor: none;
+        }
+
+        .contact-link:hover {
+            background: rgba(73, 197, 182, 0.15);
+            border-color: rgba(73, 197, 182, 0.5);
+            transform: translateY(-5px);
+        }
+
+        .contact-link i {
+            font-size: 1.5rem;
+            color: #49c5b6;
+        }
+
+        /* Info Grid */
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin: 30px 0;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
         }
 
         .info-item {
-            display: flex;
-            align-items: center;
-            padding: 12px 15px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
             transition: all 0.3s ease;
         }
 
         .info-item:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 147, 152, 0.1);
+            border-color: rgba(255, 147, 152, 0.3);
+            transform: translateX(10px);
         }
 
         .info-item i {
-            font-size: 1.2em;
-            color: var(--primary-color);
-            margin-right: 12px;
-            min-width: 25px;
-            text-align: center;
-        }
-
-        .info-item .label {
-            font-size: 0.85em;
-            color: var(--text-light);
-            font-weight: 500;
+            font-size: 2rem;
+            color: #FF9398;
+            margin-bottom: 1rem;
             display: block;
         }
 
-        .info-item .value {
-            font-size: 1em;
-            color: var(--text-dark);
-            font-weight: 400;
+        .info-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
         }
 
-        .section-title {
-            font-size: 1.8em;
-            font-weight: 600;
-            color: var(--primary-color);
-            margin-bottom: 25px;
-            position: relative;
-            display: inline-block;
+        .info-value {
+            font-size: 1.1rem;
+            font-weight: 300;
         }
 
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 0;
-            width: 60px;
-            height: 3px;
-            background: var(--accent-color);
-            border-radius: 2px;
-        }
-
-        .contact-links {
+        /* Expertise Tags */
+        .expertise-grid {
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
-            justify-content: center;
-            margin: 30px 0;
-        }
-
-        .contact-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #475569, #64748b);
-            color: white;
-            text-decoration: none;
-            border-radius: 50px;
-            font-weight: 500;
-            font-size: 0.95em;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(71, 85, 105, 0.3);
-        }
-
-        .contact-link:hover {
-            transform: translateY(-3px);
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            box-shadow: 0 8px 25px rgba(0, 0, 139, 0.4);
-        }
-
-        .contact-link i {
-            font-size: 1.2em;
-        }
-
-        .expertise-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin: 20px 0;
+            gap: 1rem;
+            margin-top: 2rem;
         }
 
         .tag {
-            padding: 10px 20px;
-            background: linear-gradient(135deg, #eff6ff, #dbeafe);
-            color: var(--primary-color);
-            border-radius: 25px;
-            font-size: 0.9em;
-            font-weight: 500;
-            border: 1px solid rgba(59, 130, 246, 0.2);
+            padding: 0.8rem 1.5rem;
+            background: rgba(73, 197, 182, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(73, 197, 182, 0.3);
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 300;
+            letter-spacing: 0.05em;
             transition: all 0.3s ease;
+            pointer-events: auto;
+            cursor: none;
         }
 
         .tag:hover {
-            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-            color: white;
+            background: rgba(73, 197, 182, 0.3);
+            border-color: #49c5b6;
             transform: scale(1.05);
         }
 
+        /* Stats Grid */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 20px;
-            margin: 30px 0;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
         }
 
         .stat-card {
             text-align: center;
-            padding: 25px;
-            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-            border-radius: 16px;
-            border: 2px solid rgba(59, 130, 246, 0.1);
-            transition: all 0.3s ease;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            transition: all 0.4s ease;
         }
 
         .stat-card:hover {
-            border-color: var(--accent-color);
-            transform: translateY(-5px);
+            background: rgba(73, 197, 182, 0.1);
+            border-color: rgba(73, 197, 182, 0.5);
+            transform: translateY(-10px) scale(1.05);
         }
 
         .stat-number {
-            font-size: 2.5em;
-            font-weight: 700;
-            color: var(--primary-color);
+            font-size: 3rem;
+            font-weight: 100;
+            background: linear-gradient(135deg, #49c5b6, #FF9398);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 0.5rem;
         }
 
         .stat-label {
-            font-size: 0.9em;
-            color: var(--text-light);
-            font-weight: 500;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
         }
 
-        .footer {
-            text-align: center;
-            padding: 30px;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.9em;
-        }
-
+        /* Download CV Button */
         .download-cv {
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            padding: 15px 35px;
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-            text-decoration: none;
+            gap: 1rem;
+            padding: 1.2rem 2.5rem;
+            background: rgba(73, 197, 182, 0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid #49c5b6;
             border-radius: 50px;
-            font-weight: 600;
-            font-size: 1.05em;
-            margin: 20px auto;
+            color: #fff;
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 300;
+            letter-spacing: 0.1em;
             transition: all 0.3s ease;
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            pointer-events: auto;
+            cursor: none;
+            margin-top: 2rem;
         }
 
         .download-cv:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.5);
+            background: rgba(73, 197, 182, 0.4);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(73, 197, 182, 0.3);
         }
 
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 3rem 2rem;
+            opacity: 0.6;
+            font-size: 0.9rem;
+        }
+
+        /* Scroll Indicator */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0.6;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-10px); }
+            60% { transform: translateX(-50%) translateY(-5px); }
+        }
+
+        .scroll-indicator i {
+            font-size: 2rem;
+            color: #49c5b6;
+        }
+
+        /* Parallax Effects */
+        .parallax-fast {
+            transition: transform 0.1s ease-out;
+        }
+
+        .parallax-slow {
+            transition: transform 0.3s ease-out;
+        }
+
+        /* Info Text */
+        .info-text {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            font-size: 0.9rem;
+            opacity: 0.6;
+            letter-spacing: 0.1em;
+            z-index: 3;
+        }
+
+        /* Responsive */
         @media (max-width: 768px) {
-            .card {
-                padding: 30px 20px;
+            body { cursor: auto; }
+            .cursor { display: none; }
+            
+            h1 { font-size: 3rem; }
+            .subtitle { font-size: 1rem; }
+            .section-title { font-size: 2rem; }
+            
+            .glass-card {
+                padding: 2rem;
             }
-
-            .name {
-                font-size: 2.5em;
+            
+            .contact-grid {
+                grid-template-columns: 1fr;
             }
-
-            .title {
-                font-size: 1.2em;
-            }
-
-            .summary {
-                font-size: 1em;
-            }
-
+            
             .info-grid {
                 grid-template-columns: 1fr;
             }
-
-            .contact-links {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .contact-link {
-                justify-content: center;
+            
+            .info-text {
+                display: none;
             }
         }
 
-        .pulse {
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.7;
-            }
-        }
+        /* Animation delays for staggered reveal */
+        .glass-card:nth-child(1) { transition-delay: 0.1s; }
+        .glass-card:nth-child(2) { transition-delay: 0.2s; }
+        .glass-card:nth-child(3) { transition-delay: 0.3s; }
+        .glass-card:nth-child(4) { transition-delay: 0.4s; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <div class="header-section">
-                <h1 class="name">Kiarash Farajzadehahary</h1>
-                <p class="title">PhD Candidate | Polymer Scientist | Machine Learning Researcher</p>
-                <p class="summary">
-                    Combining experimental and computational expertise to develop chemistry-informed AI models 
-                    that bring polymer knowledge to machine learning and deploying it for reactor control, 
-                    with a proven track record in collaborative research and high-impact publications.
-                </p>
-            </div>
+    <!-- Custom Cursor -->
+    <div class="cursor"></div>
 
-            <div class="divider"></div>
-
-            <h2 class="section-title">Contact Information</h2>
-            
-            <div class="info-grid">
-                <div class="info-item">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <div>
-                        <span class="label">Location</span>
-                        <span class="value">San Sebastian, Spain</span>
-                    </div>
-                </div>
-                
-                <div class="info-item">
-                    <i class="fas fa-envelope"></i>
-                    <div>
-                        <span class="label">Email</span>
-                        <span class="value">KiarashFa@Gmail.com</span>
-                    </div>
-                </div>
-                
-                <div class="info-item">
-                    <i class="fas fa-phone"></i>
-                    <div>
-                        <span class="label">Phone</span>
-                        <span class="value">(+34) 943 018 475</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="contact-links">
-                <a href="https://github.com/KiarashFa" class="contact-link" target="_blank">
-                    <i class="fab fa-github"></i>
-                    <span>GitHub</span>
-                </a>
-                
-                <a href="https://www.linkedin.com/in/KiarashFa/" class="contact-link" target="_blank">
-                    <i class="fab fa-linkedin"></i>
-                    <span>LinkedIn</span>
-                </a>
-                
-                <a href="https://scholar.google.com/citations?user=9D1FftIAAAAJ&hl=en" class="contact-link" target="_blank">
-                    <i class="fas fa-graduation-cap"></i>
-                    <span>Google Scholar</span>
-                </a>
-                
-                <a href="https://www.researchgate.net/profile/Kiarash-Farajzadehahary" class="contact-link" target="_blank">
-                    <i class="fab fa-researchgate"></i>
-                    <span>ResearchGate</span>
-                </a>
-                
-                <a href="https://orcid.org/0009-0006-6628-3009" class="contact-link" target="_blank">
-                    <i class="fab fa-orcid"></i>
-                    <span>ORCID</span>
-                </a>
-                
-                <a href="mailto:KiarashFa@gmail.com" class="contact-link">
-                    <i class="fas fa-paper-plane"></i>
-                    <span>Email Me</span>
-                </a>
-                
-                <a href="https://t.me/KiarashFa" class="contact-link" target="_blank">
-                    <i class="fab fa-telegram"></i>
-                    <span>Telegram</span>
-                </a>
-            </div>
-
-            <div class="divider"></div>
-
-            <h2 class="section-title">Core Expertise</h2>
-            
-            <div class="expertise-tags">
-                <span class="tag">Machine Learning</span>
-                <span class="tag">Deep Learning</span>
-                <span class="tag">Reinforcement Learning</span>
-                <span class="tag">Neural Networks</span>
-                <span class="tag">Polymer Science</span>
-                <span class="tag">Emulsion Polymerization</span>
-                <span class="tag">Reaction Engineering</span>
-                <span class="tag">Process Optimization</span>
-                <span class="tag">Python</span>
-                <span class="tag">TensorFlow</span>
-                <span class="tag">PyTorch</span>
-                <span class="tag">Reaction Calorimetry</span>
-                <span class="tag">Data Analysis</span>
-                <span class="tag">R&D</span>
-            </div>
-
-            <div class="divider"></div>
-
-            <h2 class="section-title">Current Position</h2>
-            
-            <div class="info-item" style="margin-bottom: 20px;">
-                <i class="fas fa-university"></i>
-                <div>
-                    <span class="label">Institution</span>
-                    <span class="value">University of the Basque Country (UPV/EHU)</span>
-                </div>
-            </div>
-            
-            <div class="info-item" style="margin-bottom: 20px;">
-                <i class="fas fa-flask"></i>
-                <div>
-                    <span class="label">Research Group</span>
-                    <span class="value">POLYMAT - Dept. of Polymer Science & Technology</span>
-                </div>
-            </div>
-            
-            <div class="info-item">
-                <i class="fas fa-microscope"></i>
-                <div>
-                    <span class="label">Research Focus</span>
-                    <span class="value">Utilizing Machine Learning in Emulsion Polymerization</span>
-                </div>
-            </div>
-
-            <div class="divider"></div>
-
-            <h2 class="section-title">Google Scholar Metrics</h2>
-            
-            <div id="scholar-stats" class="stats-grid">
-                <div class="stat-card">
-                    <span class="stat-number" id="citations-count">--</span>
-                    <span class="stat-label">Citations</span>
-                </div>
-                
-                <div class="stat-card">
-                    <span class="stat-number" id="h-index">--</span>
-                    <span class="stat-label">h-index</span>
-                </div>
-                
-                <div class="stat-card">
-                    <span class="stat-number" id="i10-index">--</span>
-                    <span class="stat-label">i10-index</span>
-                </div>
-                
-                <div class="stat-card">
-                    <span class="stat-number pulse" id="publications-count">--</span>
-                    <span class="stat-label">Publications</span>
-                </div>
-            </div>
-            
-            <p style="text-align: center; color: var(--text-light); font-size: 0.9em; margin-top: 15px;">
-                <i class="fas fa-info-circle"></i> Data fetched live from Google Scholar
-            </p>
-
-            <div style="text-align: center; margin-top: 40px;">
-                <a href="Kiarash_Farajzadehahary_CV.pdf" class="download-cv" download>
-                    <i class="fas fa-download"></i>
-                    <span>Download Full CV</span>
-                </a>
-            </div>
-        </div>
-
-        <div class="footer">
-            <p>© 2025 Kiarash Farajzadehahary. All rights reserved.</p>
-            <p style="margin-top: 10px; font-size: 0.85em;">
-                <i class="fas fa-clock"></i> Last updated: November 2025
-            </p>
-        </div>
+    <!-- 3D Canvas Background -->
+    <div id="canvas-container"></div>
+    
+    <!-- Info Text -->
+    <div class="info-text">
+        Move mouse to interact • Scroll to explore
     </div>
 
-    <script>
-        // Google Scholar data fetching
-        async function fetchScholarData() {
-            const scholarId = '9D1FftIAAAAJ';
+    <!-- Main Content -->
+    <div class="content">
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1 class="parallax-fast">Kiarash Farajzadehahary</h1>
+            <p class="subtitle parallax-slow">PhD Candidate | Polymer Scientist | ML Researcher</p>
+            <p class="hero-description parallax-slow">
+                Combining experimental and computational expertise to develop chemistry-informed AI models 
+                that bring polymer knowledge to machine learning and deploying it for reactor control
+            </p>
+            <div class="scroll-indicator">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section class="section">
+            <div class="section-container">
+                <h2 class="section-title parallax-fast">About Me</h2>
+                <div class="glass-card">
+                    <p style="font-size: 1.1rem; line-height: 1.8; opacity: 0.9;">
+                        I am a PhD candidate at the University of the Basque Country (UPV/EHU), working at POLYMAT 
+                        in the Department of Polymer Science & Technology. My research focuses on utilizing machine 
+                        learning in emulsion polymerization, bridging the gap between experimental chemistry and 
+                        artificial intelligence. With a proven track record in collaborative research and high-impact 
+                        publications, I'm passionate about pushing the boundaries of what's possible when we combine 
+                        domain expertise with cutting-edge computational methods.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section class="section">
+            <div class="section-container">
+                <h2 class="section-title parallax-fast">Connect With Me</h2>
+                <div class="glass-card">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <div class="info-label">Location</div>
+                            <div class="info-value">San Sebastian, Spain</div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <i class="fas fa-envelope"></i>
+                            <div class="info-label">Email</div>
+                            <div class="info-value">KiarashFa@Gmail.com</div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <i class="fas fa-phone"></i>
+                            <div class="info-label">Phone</div>
+                            <div class="info-value">(+34) 943 018 475</div>
+                        </div>
+                    </div>
+
+                    <div class="contact-grid">
+                        <a href="https://github.com/KiarashFa" class="contact-link" target="_blank">
+                            <i class="fab fa-github"></i>
+                            <span>GitHub</span>
+                        </a>
+                        
+                        <a href="https://www.linkedin.com/in/KiarashFa/" class="contact-link" target="_blank">
+                            <i class="fab fa-linkedin"></i>
+                            <span>LinkedIn</span>
+                        </a>
+                        
+                        <a href="https://scholar.google.com/citations?user=9D1FftIAAAAJ&hl=en" class="contact-link" target="_blank">
+                            <i class="fas fa-graduation-cap"></i>
+                            <span>Google Scholar</span>
+                        </a>
+                        
+                        <a href="https://www.researchgate.net/profile/Kiarash-Farajzadehahary" class="contact-link" target="_blank">
+                            <i class="fab fa-researchgate"></i>
+                            <span>ResearchGate</span>
+                        </a>
+                        
+                        <a href="https://orcid.org/0009-0006-6628-3009" class="contact-link" target="_blank">
+                            <i class="fab fa-orcid"></i>
+                            <span>ORCID</span>
+                        </a>
+                        
+                        <a href="https://t.me/KiarashFa" class="contact-link" target="_blank">
+                            <i class="fab fa-telegram"></i>
+                            <span>Telegram</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Research Section -->
+        <section class="section">
+            <div class="section-container">
+                <h2 class="section-title parallax-fast">Research Focus</h2>
+                <div class="glass-card">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i class="fas fa-university"></i>
+                            <div class="info-label">Institution</div>
+                            <div class="info-value">University of the Basque Country (UPV/EHU)</div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <i class="fas fa-flask"></i>
+                            <div class="info-label">Research Group</div>
+                            <div class="info-value">POLYMAT - Dept. of Polymer Science & Technology</div>
+                        </div>
+                        
+                        <div class="info-item">
+                            <i class="fas fa-microscope"></i>
+                            <div class="info-label">Focus Area</div>
+                            <div class="info-value">Utilizing Machine Learning in Emulsion Polymerization</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Expertise Section -->
+        <section class="section">
+            <div class="section-container">
+                <h2 class="section-title parallax-fast">Core Expertise</h2>
+                <div class="glass-card">
+                    <div class="expertise-grid">
+                        <span class="tag">Machine Learning</span>
+                        <span class="tag">Deep Learning</span>
+                        <span class="tag">Reinforcement Learning</span>
+                        <span class="tag">Neural Networks</span>
+                        <span class="tag">Polymer Science</span>
+                        <span class="tag">Emulsion Polymerization</span>
+                        <span class="tag">Reaction Engineering</span>
+                        <span class="tag">Process Optimization</span>
+                        <span class="tag">Python</span>
+                        <span class="tag">TensorFlow</span>
+                        <span class="tag">PyTorch</span>
+                        <span class="tag">Reaction Calorimetry</span>
+                        <span class="tag">Data Analysis</span>
+                        <span class="tag">R&D</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Impact Section -->
+        <section class="section">
+            <div class="section-container">
+                <h2 class="section-title parallax-fast">Research Impact</h2>
+                <div class="glass-card">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-number" id="citations-count">--</span>
+                            <span class="stat-label">Citations</span>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <span class="stat-number" id="h-index">--</span>
+                            <span class="stat-label">h-index</span>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <span class="stat-number" id="i10-index">--</span>
+                            <span class="stat-label">i10-index</span>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <span class="stat-number" id="publications-count">--</span>
+                            <span class="stat-label">Publications</span>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center;">
+                        <a href="Kiarash_Farajzadehahary_CV.pdf" class="download-cv" download>
+                            <i class="fas fa-download"></i>
+                            <span>Download Full CV</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>© 2025 Kiarash Farajzadehahary. All rights reserved.</p>
+            <p style="margin-top: 10px; font-size: 0.85em; opacity: 0.7;">
+                Last updated: November 2025
+            </p>
+        </footer>
+    </div>
+
+    <!-- Three.js Implementation -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // Custom Cursor
+        const cursor = document.querySelector('.cursor');
+        let cursorX = 0, cursorY = 0;
+        let mouseX = 0, mouseY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        function animateCursor() {
+            cursorX += (mouseX - cursorX) * 0.1;
+            cursorY += (mouseY - cursorY) * 0.1;
+            cursor.style.left = cursorX + 'px';
+            cursor.style.top = cursorY + 'px';
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+
+        document.addEventListener('mousedown', () => cursor.classList.add('active'));
+        document.addEventListener('mouseup', () => cursor.classList.remove('active'));
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ 
+            antialias: true,
+            alpha: true
+        });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        camera.position.z = 5;
+
+        // Custom vertex shader for particles
+        const particleVertexShader = `
+            uniform float uTime;
+            uniform vec2 uMouse;
+            uniform float uSize;
             
-            try {
-                // Using a CORS proxy to fetch Google Scholar data
-                // Note: This is a basic implementation. For production, consider:
-                // 1. Your own backend API that scrapes Scholar data
-                // 2. A scheduled job that updates static data periodically
-                // 3. Manual update with current values
+            attribute float aScale;
+            attribute vec3 aRandomness;
+            
+            varying vec3 vColor;
+            
+            void main() {
+                vec4 modelPosition = modelMatrix * vec4(position, 1.0);
                 
-                // For now, we'll use fallback to manual values
-                // You can replace these with actual API calls if you set up a backend
+                // Wave effect
+                float distanceToMouse = distance(modelPosition.xy, uMouse * 10.0);
+                float wave = sin(distanceToMouse * 2.0 - uTime * 2.0) * 0.3;
+                modelPosition.z += wave;
                 
-                const fallbackData = {
-                    citations: 'Loading...',
-                    hindex: 'Loading...',
-                    i10index: 'Loading...',
-                    publications: 'Loading...'
-                };
+                // Add randomness
+                modelPosition.xyz += aRandomness * sin(uTime + position.x * 10.0) * 0.1;
                 
-                // Try to fetch from your own API endpoint if available
-                // const response = await fetch(`https://your-api.com/scholar/${scholarId}`);
-                // const data = await response.json();
+                vec4 viewPosition = viewMatrix * modelPosition;
+                vec4 projectedPosition = projectionMatrix * viewPosition;
                 
-                // For demonstration, using placeholder values
-                // You should update these manually or set up an API
-                setTimeout(() => {
-                    document.getElementById('citations-count').textContent = '50+';
-                    document.getElementById('h-index').textContent = '4';
-                    document.getElementById('i10-index').textContent = '3';
-                    document.getElementById('publications-count').textContent = '8';
-                }, 500);
+                gl_Position = projectedPosition;
+                gl_PointSize = uSize * aScale * (1.0 / -viewPosition.z);
                 
-            } catch (error) {
-                console.error('Error fetching Scholar data:', error);
-                // Fallback values
+                // Color based on position and time
+                vColor = vec3(
+                    0.5 + 0.5 * sin(uTime + position.x * 2.0),
+                    0.5 + 0.5 * sin(uTime + position.y * 2.0 + 2.0),
+                    0.5 + 0.5 * sin(uTime + position.z * 2.0 + 4.0)
+                );
+            }
+        `;
+
+        // Custom fragment shader for particles
+        const particleFragmentShader = `
+            varying vec3 vColor;
+            
+            void main() {
+                // Circular particles
+                float strength = distance(gl_PointCoord, vec2(0.5));
+                strength = 1.0 - strength;
+                strength = pow(strength, 3.0);
+                
+                vec3 finalColor = mix(vec3(0.29, 0.77, 0.71), vec3(1.0, 0.58, 0.6), vColor.r);
+                finalColor = mix(finalColor, vColor, 0.5);
+                
+                gl_FragColor = vec4(finalColor, strength * 0.6);
+            }
+        `;
+
+        // Create particle system
+        const particleCount = 10000;
+        const particlesGeometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const scales = new Float32Array(particleCount);
+        const randomness = new Float32Array(particleCount * 3);
+
+        for (let i = 0; i < particleCount; i++) {
+            const i3 = i * 3;
+            
+            // Sphere distribution
+            const radius = Math.random() * 10;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            
+            positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+            positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+            positions[i3 + 2] = radius * Math.cos(phi);
+            
+            scales[i] = Math.random();
+            
+            randomness[i3] = (Math.random() - 0.5) * 0.5;
+            randomness[i3 + 1] = (Math.random() - 0.5) * 0.5;
+            randomness[i3 + 2] = (Math.random() - 0.5) * 0.5;
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        particlesGeometry.setAttribute('aScale', new THREE.BufferAttribute(scales, 1));
+        particlesGeometry.setAttribute('aRandomness', new THREE.BufferAttribute(randomness, 3));
+
+        const particlesMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                uTime: { value: 0 },
+                uMouse: { value: new THREE.Vector2(0, 0) },
+                uSize: { value: 25.0 }
+            },
+            vertexShader: particleVertexShader,
+            fragmentShader: particleFragmentShader,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+
+        const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particles);
+
+        // Background sphere
+        const sphereVertexShader = `
+            varying vec2 vUv;
+            varying vec3 vPosition;
+            
+            void main() {
+                vUv = uv;
+                vPosition = position;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `;
+
+        const sphereFragmentShader = `
+            uniform float uTime;
+            varying vec2 vUv;
+            varying vec3 vPosition;
+            
+            void main() {
+                vec2 uv = vUv;
+                
+                vec3 color1 = vec3(0.05, 0.1, 0.15);
+                vec3 color2 = vec3(0.29, 0.77, 0.71);
+                vec3 color3 = vec3(1.0, 0.58, 0.6);
+                
+                float noise = sin(vPosition.x * 5.0 + uTime) * 
+                             sin(vPosition.y * 5.0 + uTime * 0.7) * 
+                             sin(vPosition.z * 5.0 + uTime * 1.3);
+                
+                vec3 color = mix(color1, color2, uv.y);
+                color = mix(color, color3, noise * 0.5 + 0.5);
+                
+                gl_FragColor = vec4(color, 0.15);
+            }
+        `;
+
+        const sphereGeometry = new THREE.SphereGeometry(20, 64, 64);
+        const sphereMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                uTime: { value: 0 }
+            },
+            vertexShader: sphereVertexShader,
+            fragmentShader: sphereFragmentShader,
+            transparent: true,
+            side: THREE.BackSide
+        });
+
+        const backgroundSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        scene.add(backgroundSphere);
+
+        // Mouse interaction
+        const mouse = new THREE.Vector2();
+        
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        // Scroll-based parallax
+        let scrollY = 0;
+        window.addEventListener('scroll', () => {
+            scrollY = window.scrollY;
+            
+            // Parallax for text elements
+            const parallaxFast = document.querySelectorAll('.parallax-fast');
+            const parallaxSlow = document.querySelectorAll('.parallax-slow');
+            
+            parallaxFast.forEach(el => {
+                const speed = 0.5;
+                const yPos = -(scrollY * speed);
+                el.style.transform = `translateY(${yPos}px)`;
+            });
+            
+            parallaxSlow.forEach(el => {
+                const speed = 0.2;
+                const yPos = -(scrollY * speed);
+                el.style.transform = `translateY(${yPos}px)`;
+            });
+        });
+
+        // Scroll reveal animation
+        const revealElements = document.querySelectorAll('.glass-card');
+        
+        const revealOnScroll = () => {
+            revealElements.forEach(el => {
+                const elementTop = el.getBoundingClientRect().top;
+                const elementBottom = el.getBoundingClientRect().bottom;
+                const windowHeight = window.innerHeight;
+                
+                if (elementTop < windowHeight * 0.8 && elementBottom > 0) {
+                    el.classList.add('reveal');
+                }
+            });
+        };
+        
+        window.addEventListener('scroll', revealOnScroll);
+        revealOnScroll(); // Initial check
+
+        // Animation loop
+        const clock = new THREE.Clock();
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const elapsedTime = clock.getElapsedTime();
+            
+            // Update shader uniforms
+            particlesMaterial.uniforms.uTime.value = elapsedTime;
+            particlesMaterial.uniforms.uMouse.value = mouse;
+            sphereMaterial.uniforms.uTime.value = elapsedTime;
+            
+            // Rotate particle system
+            particles.rotation.y = elapsedTime * 0.03;
+            particles.rotation.x = Math.sin(elapsedTime * 0.2) * 0.2;
+            
+            // Camera movement with mouse
+            camera.position.x = Math.sin(mouse.x * 0.3) * 2;
+            camera.position.y = Math.cos(mouse.y * 0.3) * 2 - scrollY * 0.0015;
+            camera.lookAt(scene.position);
+            
+            // Rotate background
+            backgroundSphere.rotation.y = elapsedTime * 0.01;
+            backgroundSphere.rotation.x = elapsedTime * 0.005;
+            
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Google Scholar data
+        async function fetchScholarData() {
+            setTimeout(() => {
                 document.getElementById('citations-count').textContent = '50+';
                 document.getElementById('h-index').textContent = '4';
                 document.getElementById('i10-index').textContent = '3';
                 document.getElementById('publications-count').textContent = '8';
-            }
+            }, 800);
         }
 
-        // Load data when page loads
         window.addEventListener('DOMContentLoaded', fetchScholarData);
     </script>
 </body>
