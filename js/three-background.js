@@ -37,7 +37,8 @@ export function initThreeJS({
     0.1,
     1000
   );
-  camera.position.set(0, 0, 36);
+  camera.position.set(25, 5, 25);
+  camera.lookAt(0, 0, 0);
 
   // -- simple fog for depth feel (optional)
   scene.fog = new THREE.FogExp2(0x0b0f16, 0.004);
