@@ -1,5 +1,6 @@
 // ===========================
 // THREE.JS NEURAL NETWORK BACKGROUND
+// OPTIMIZED VERSION
 // ===========================
 import * as THREE from 'three';
 
@@ -21,12 +22,12 @@ export function initThreeJS() {
     // ===========================
     // NEURAL NETWORK PARAMETERS
     // ===========================
-    const nodeCount = 300;
+    const nodeCount = 200; // Reduced for better performance
     const connectionDistance = 3.5;
-    const maxConnections = 8;
-    const signalSpeed = 1.5;
-    const signalLength = 0.3; // Length of the signal trail (0-1)
-    const autoSignalInterval = 2000; // Auto-fire signals every 2 seconds
+    const maxConnections = 6; // Reduced connections
+    const signalSpeed = 2.0;
+    const maxActiveSignals = 30; // Limit active signals
+    const autoSignalInterval = 3000; // Slower auto-fire
 
     // ===========================
     // CREATE NODES (NEURONS)
@@ -36,7 +37,6 @@ export function initThreeJS() {
     const nodeScales = new Float32Array(nodeCount);
     const nodeActivity = new Float32Array(nodeCount);
 
-    // Store node data
     const nodeArray = [];
 
     for (let i = 0; i < nodeCount; i++) {
@@ -54,7 +54,7 @@ export function initThreeJS() {
             x, y, z, 
             index: i,
             connections: [],
-            activation: 0.0 // Current activation level (0-1)
+            activation: 0.0
         });
         
         nodeScales[i] = 0.5 + Math.random() * 0.5;
@@ -75,7 +75,6 @@ export function initThreeJS() {
         attribute float aActivity;
         
         varying vec3 vColor;
-        varying float vActivity;
         
         void main() {
             vec4 modelPosition = modelMatrix * vec4(position, 1.0);
@@ -95,11 +94,9 @@ export function initThreeJS() {
             
             gl_Position = projectedPosition;
             
-            // Pulse based on activity
             float pulse = sin(uTime * 2.0 + aActivity * 10.0) * 0.3 + 0.7;
             gl_PointSize = uSize * aScale * pulse * (1.0 / -viewPosition.z);
             
-            vActivity = aActivity;
             vColor = mix(
                 vec3(0.29, 0.77, 0.71),
                 vec3(1.0, 0.58, 0.6),
@@ -110,7 +107,6 @@ export function initThreeJS() {
 
     const nodeFragmentShader = `
         varying vec3 vColor;
-        varying float vActivity;
         
         void main() {
             vec2 center = gl_PointCoord - vec2(0.5);
@@ -164,11 +160,11 @@ export function initThreeJS() {
                 const connection = {
                     startNode: nodeA,
                     endNode: nodeB,
-                    start: { x: nodeA.x, y: nodeA.y, z: nodeA.z },
-                    end: { x: nodeB.x, y: nodeB.y, z: nodeB.z },
+                    start: new THREE.Vector3(nodeA.x, nodeA.y, nodeA.z),
+                    end: new THREE.Vector3(nodeB.x, nodeB.y, nodeB.z),
                     distance: distance,
                     strength: 1.0 - (distance / connectionDistance),
-                    signals: [] // Active signals on this connection
+                    activeSignals: [] // Track signals on this connection
                 };
                 
                 connections.push(connection);
@@ -183,11 +179,9 @@ export function initThreeJS() {
 
     // Create base connection lines (static)
     const linePositions = new Float32Array(connections.length * 6);
-    const lineStrengths = new Float32Array(connections.length * 2);
 
     connections.forEach((conn, i) => {
         const i6 = i * 6;
-        const i2 = i * 2;
         
         linePositions[i6] = conn.start.x;
         linePositions[i6 + 1] = conn.start.y;
@@ -196,9 +190,6 @@ export function initThreeJS() {
         linePositions[i6 + 3] = conn.end.x;
         linePositions[i6 + 4] = conn.end.y;
         linePositions[i6 + 5] = conn.end.z;
-        
-        lineStrengths[i2] = conn.strength;
-        lineStrengths[i2 + 1] = conn.strength;
     });
 
     const connectionsGeometry = new THREE.BufferGeometry();
@@ -207,7 +198,7 @@ export function initThreeJS() {
     const connectionsMaterial = new THREE.LineBasicMaterial({
         color: 0x49c5b6,
         transparent: true,
-        opacity: 0.1,
+        opacity: 0.08,
         blending: THREE.AdditiveBlending
     });
 
@@ -215,16 +206,16 @@ export function initThreeJS() {
     scene.add(connectionLines);
 
     // ===========================
-    // SIGNAL PROPAGATION SYSTEM
+    // OPTIMIZED SIGNAL SYSTEM
     // ===========================
     
     class Signal {
         constructor(connection, direction = 1, color = 0x49c5b6) {
             this.connection = connection;
-            this.progress = 0; // 0 to 1
-            this.direction = direction; // 1 = forward, -1 = backward
+            this.progress = 0;
+            this.direction = direction;
             this.speed = signalSpeed;
-            this.color = color;
+            this.color = new THREE.Color(color);
             this.active = true;
         }
         
@@ -233,185 +224,168 @@ export function initThreeJS() {
             
             this.progress += this.speed * deltaTime * this.direction;
             
-            // Signal completed
             if (this.progress >= 1.0 || this.progress <= 0) {
                 this.active = false;
                 
-                // Activate the end node and propagate
                 const targetNode = this.direction > 0 ? 
                     this.connection.endNode : 
                     this.connection.startNode;
                 
-                activateNode(targetNode);
+                // Only propagate if we have room for more signals
+                if (activeSignals.length < maxActiveSignals) {
+                    activateNode(targetNode, false);
+                }
+                
                 return false;
             }
             
             return true;
         }
-        
-        getPosition() {
-            const t = Math.max(0, Math.min(1, this.progress));
-            const start = this.connection.start;
-            const end = this.connection.end;
-            
-            return {
-                x: start.x + (end.x - start.x) * t,
-                y: start.y + (end.y - start.y) * t,
-                z: start.z + (end.z - start.z) * t
-            };
-        }
     }
 
-    // Active signals container
     const activeSignals = [];
 
-    // Function to activate a node and send signals to connected nodes
     function activateNode(node, isManual = false) {
         node.activation = 1.0;
         
-        // Send signals through all connections
-        node.connections.forEach(conn => {
-            const direction = conn.startNode === node ? 1 : -1;
+        // Limit propagation
+        const maxNewSignals = Math.min(node.connections.length, 3);
+        
+        for (let i = 0; i < maxNewSignals; i++) {
+            if (activeSignals.length >= maxActiveSignals) break;
             
-            // Random color: mostly cyan, sometimes pink
+            const conn = node.connections[i];
+            const direction = conn.startNode === node ? 1 : -1;
             const color = Math.random() > 0.3 ? 0x49c5b6 : 0xFF9398;
             
             const signal = new Signal(conn, direction, color);
-            conn.signals.push(signal);
+            conn.activeSignals.push(signal);
             activeSignals.push(signal);
-        });
+        }
         
-        // Create visual burst effect for manual clicks
         if (isManual) {
             createBurstEffect(node);
         }
     }
 
-    // Visual burst effect when clicking a node
     function createBurstEffect(node) {
-        const burstGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+        const burstGeometry = new THREE.SphereGeometry(0.5, 8, 8);
         const burstMaterial = new THREE.MeshBasicMaterial({
             color: 0xFF9398,
             transparent: true,
-            opacity: 0.8,
-            blending: THREE.AdditiveBlending
+            opacity: 0.6
         });
         const burst = new THREE.Mesh(burstGeometry, burstMaterial);
         burst.position.set(node.x, node.y, node.z);
         scene.add(burst);
         
-        // Animate burst
-        let scale = 1;
-        const burstAnimation = () => {
-            scale += 0.1;
-            burst.scale.setScalar(scale);
-            burst.material.opacity = Math.max(0, 0.8 - scale * 0.1);
+        let life = 0;
+        const animate = () => {
+            life += 0.05;
+            burst.scale.setScalar(1 + life * 2);
+            burst.material.opacity = Math.max(0, 0.6 - life);
             
-            if (burst.material.opacity > 0) {
-                requestAnimationFrame(burstAnimation);
+            if (burst.material.opacity > 0.01) {
+                requestAnimationFrame(animate);
             } else {
                 scene.remove(burst);
                 burst.geometry.dispose();
                 burst.material.dispose();
             }
         };
-        burstAnimation();
+        animate();
     }
 
-    // Auto-fire random signals
-    setInterval(() => {
-        const randomNode = nodeArray[Math.floor(Math.random() * nodeArray.length)];
-        activateNode(randomNode);
-    }, autoSignalInterval);
+    // Auto-fire with throttling
+    let lastAutoFire = 0;
+    function autoFireSignal(currentTime) {
+        if (currentTime - lastAutoFire > autoSignalInterval && activeSignals.length < maxActiveSignals) {
+            const randomNode = nodeArray[Math.floor(Math.random() * nodeArray.length)];
+            activateNode(randomNode);
+            lastAutoFire = currentTime;
+        }
+    }
 
-    // Start with a few initial signals
-    for (let i = 0; i < 5; i++) {
+    // Start with fewer initial signals
+    for (let i = 0; i < 3; i++) {
         const randomNode = nodeArray[Math.floor(Math.random() * nodeArray.length)];
         activateNode(randomNode);
     }
 
     // ===========================
-    // DYNAMIC CONNECTION RENDERING
+    // POOLED SIGNAL GEOMETRY
     // ===========================
+    const maxSignalLines = 50;
+    const signalGeometries = [];
+    const signalMeshes = [];
     
-    // Create material for signal trails
-    const signalMaterial = new THREE.LineBasicMaterial({
-        vertexColors: true,
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        linewidth: 2
-    });
-
-    const signalLines = [];
+    // Pre-create signal line pool
+    for (let i = 0; i < maxSignalLines; i++) {
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(6); // 2 points * 3 coords
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        
+        const material = new THREE.LineBasicMaterial({
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            opacity: 0
+        });
+        
+        const line = new THREE.Line(geometry, material);
+        scene.add(line);
+        
+        signalGeometries.push(geometry);
+        signalMeshes.push(line);
+    }
 
     function updateSignalVisualization() {
-        // Clear old signal lines
-        signalLines.forEach(line => {
-            scene.remove(line);
-            line.geometry.dispose();
+        let signalIndex = 0;
+        
+        // Hide all lines first
+        signalMeshes.forEach(mesh => {
+            mesh.material.opacity = 0;
         });
-        signalLines.length = 0;
-
-        // Create new signal lines
-        connections.forEach(conn => {
-            if (conn.signals.length === 0) return;
-
-            conn.signals.forEach(signal => {
-                if (!signal.active) return;
-
-                // Calculate trail start and end
-                const trailStart = Math.max(0, signal.progress - signalLength);
-                const trailEnd = signal.progress;
-
-                const start = conn.start;
-                const end = conn.end;
-
-                // Interpolate positions
-                const startPos = {
-                    x: start.x + (end.x - start.x) * trailStart,
-                    y: start.y + (end.y - start.y) * trailStart,
-                    z: start.z + (end.z - start.z) * trailStart
-                };
-
-                const endPos = {
-                    x: start.x + (end.x - start.x) * trailEnd,
-                    y: start.y + (end.y - start.y) * trailEnd,
-                    z: start.z + (end.z - start.z) * trailEnd
-                };
-
-                // Create trail geometry
-                const geometry = new THREE.BufferGeometry();
-                const positions = new Float32Array([
-                    startPos.x, startPos.y, startPos.z,
-                    endPos.x, endPos.y, endPos.z
-                ]);
-
-                // Color gradient (fade out at tail)
-                const color = new THREE.Color(signal.color);
-                const colors = new Float32Array([
-                    color.r * 0.3, color.g * 0.3, color.b * 0.3,
-                    color.r, color.g, color.b
-                ]);
-
-                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-                const line = new THREE.Line(geometry, signalMaterial);
+        
+        // Update only active signals
+        for (const connection of connections) {
+            for (const signal of connection.activeSignals) {
+                if (!signal.active || signalIndex >= maxSignalLines) continue;
                 
-                // Apply network rotation
+                const line = signalMeshes[signalIndex];
+                const geometry = signalGeometries[signalIndex];
+                const positions = geometry.attributes.position.array;
+                
+                // Calculate trail
+                const trailLength = 0.2;
+                const start = Math.max(0, signal.progress - trailLength);
+                const end = signal.progress;
+                
+                const connStart = connection.start;
+                const connEnd = connection.end;
+                
+                // Update positions
+                positions[0] = connStart.x + (connEnd.x - connStart.x) * start;
+                positions[1] = connStart.y + (connEnd.y - connStart.y) * start;
+                positions[2] = connStart.z + (connEnd.z - connStart.z) * start;
+                
+                positions[3] = connStart.x + (connEnd.x - connStart.x) * end;
+                positions[4] = connStart.y + (connEnd.y - connStart.y) * end;
+                positions[5] = connStart.z + (connEnd.z - connStart.z) * end;
+                
+                geometry.attributes.position.needsUpdate = true;
+                
+                // Update material
+                line.material.color.copy(signal.color);
+                line.material.opacity = 0.8;
                 line.rotation.copy(nodes.rotation);
                 
-                scene.add(line);
-                signalLines.push(line);
-            });
-
-            // Remove inactive signals
-            conn.signals = conn.signals.filter(s => s.active);
-        });
+                signalIndex++;
+            }
+        }
     }
 
     // ===========================
-    // MOUSE INTERACTION & CLICK
+    // MOUSE INTERACTION
     // ===========================
     const mouse = new THREE.Vector2();
     const raycaster = new THREE.Raycaster();
@@ -422,8 +396,11 @@ export function initThreeJS() {
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     });
 
-    // Click to activate nodes
+    let clicking = false;
     window.addEventListener('click', (event) => {
+        if (clicking) return;
+        clicking = true;
+        
         const clickMouse = new THREE.Vector2();
         clickMouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         clickMouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -438,6 +415,8 @@ export function initThreeJS() {
             console.log(`Node ${intersectedIndex} activated!`);
             activateNode(clickedNode, true);
         }
+        
+        setTimeout(() => { clicking = false; }, 100);
     });
 
     // ===========================
@@ -454,39 +433,45 @@ export function initThreeJS() {
         requestAnimationFrame(animate);
         
         const elapsedTime = clock.getElapsedTime();
-        const deltaTime = clock.getDelta();
+        const deltaTime = Math.min(clock.getDelta(), 0.1); // Cap delta time
         
-        // Update node uniforms
+        // Update nodes
         nodesMaterial.uniforms.uTime.value = elapsedTime;
         nodesMaterial.uniforms.uMouse.value = mouse;
         
-        // Slowly rotate network
+        // Rotate network
         nodes.rotation.y = elapsedTime * 0.02;
         nodes.rotation.x = Math.sin(elapsedTime * 0.1) * 0.1;
         connectionLines.rotation.copy(nodes.rotation);
         
-        // Update all active signals
+        // Update signals
         for (let i = activeSignals.length - 1; i >= 0; i--) {
             const signal = activeSignals[i];
-            const stillActive = signal.update(deltaTime);
-            
-            if (!stillActive) {
+            if (!signal.update(deltaTime)) {
                 activeSignals.splice(i, 1);
             }
         }
         
-        // Update node activation decay
-        nodeArray.forEach(node => {
+        // Clean up inactive signals from connections
+        for (const connection of connections) {
+            connection.activeSignals = connection.activeSignals.filter(s => s.active);
+        }
+        
+        // Update node activation
+        for (const node of nodeArray) {
             if (node.activation > 0) {
-                node.activation -= deltaTime * 0.5; // Decay rate
+                node.activation -= deltaTime * 0.5;
                 node.activation = Math.max(0, node.activation);
             }
-        });
+        }
         
         // Update signal visualization
         updateSignalVisualization();
         
-        // Camera movement
+        // Auto-fire
+        autoFireSignal(elapsedTime * 1000);
+        
+        // Camera
         camera.position.x = Math.sin(mouse.x * 0.3) * 3;
         camera.position.y = Math.cos(mouse.y * 0.3) * 3 - scrollY * 0.002;
         camera.lookAt(scene.position);
