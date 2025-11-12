@@ -154,7 +154,6 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            transform: none !important;
         }
 
         /* Contact Links */
@@ -473,7 +472,7 @@
                         <div class="info-item">
                             <i class="fas fa-envelope"></i>
                             <div class="info-label">Email</div>
-                            <div class="info-value"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d49fbdb5a6b5a7bc92b59493b9b5bdb8fab7bbb9">[email&#160;protected]</a></div>
+                            <div class="info-value">KiarashFa@Gmail.com</div>
                         </div>
                         
                         <div class="info-item">
@@ -618,7 +617,7 @@
     </div>
 
     <!-- Three.js Implementation -->
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="importmap">
+    <script type="importmap">
     {
         "imports": {
             "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
@@ -822,12 +821,12 @@
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         });
 
-        // Scroll-based parallax
+        // Scroll-based parallax (only for hero section)
         let scrollY = 0;
         window.addEventListener('scroll', () => {
             scrollY = window.scrollY;
             
-            // Parallax for text elements
+            // Parallax only for hero elements
             const parallaxFast = document.querySelectorAll('.parallax-fast');
             const parallaxSlow = document.querySelectorAll('.parallax-slow');
             
@@ -905,4 +904,12 @@
             setTimeout(() => {
                 document.getElementById('citations-count').textContent = '50+';
                 document.getElementById('h-index').textContent = '4';
-                document.getElementById('i10-index').tex
+                document.getElementById('i10-index').textContent = '3';
+                document.getElementById('publications-count').textContent = '8';
+            }, 800);
+        }
+
+        window.addEventListener('DOMContentLoaded', fetchScholarData);
+    </script>
+</body>
+</html>
