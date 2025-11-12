@@ -1,6 +1,6 @@
 // ===========================
 // THREE.JS NEURAL NETWORK BACKGROUND
-// NO CLICK VERSION - PERFORMANCE TEST
+// ENHANCED VISIBILITY VERSION
 // ===========================
 import * as THREE from 'three';
 
@@ -23,11 +23,11 @@ export function initThreeJS() {
     // NEURAL NETWORK PARAMETERS
     // ===========================
     const nodeCount = 300;
-    const connectionDistance = 3.5;
-    const maxConnections = 8;
-    const signalSpeed = 2.0;
-    const maxActiveSignals = 20; // Keep it limited
-    const autoSignalInterval = 3000;
+    const connectionDistance = 4.0; // Increased for more connections
+    const maxConnections = 10; // More connections per node
+    const signalSpeed = 1.5; // Slightly slower for visibility
+    const maxActiveSignals = 25;
+    const autoSignalInterval = 2500;
 
     // ===========================
     // CREATE NODES (NEURONS)
@@ -57,7 +57,7 @@ export function initThreeJS() {
             activation: 0.0
         });
         
-        nodeScales[i] = 0.5 + Math.random() * 0.5;
+        nodeScales[i] = 0.8 + Math.random() * 0.4; // Bigger nodes
         nodeActivity[i] = Math.random();
     }
 
@@ -75,6 +75,7 @@ export function initThreeJS() {
         attribute float aActivity;
         
         varying vec3 vColor;
+        varying float vGlow;
         
         void main() {
             vec4 modelPosition = modelMatrix * vec4(position, 1.0);
@@ -94,31 +95,38 @@ export function initThreeJS() {
             
             gl_Position = projectedPosition;
             
+            // Larger, more visible nodes
             float pulse = sin(uTime * 2.0 + aActivity * 10.0) * 0.3 + 0.7;
             gl_PointSize = uSize * aScale * pulse * (1.0 / -viewPosition.z);
             
+            // Brighter colors
             vColor = mix(
-                vec3(0.29, 0.77, 0.71),
-                vec3(1.0, 0.58, 0.6),
+                vec3(0.29, 0.77, 0.71), // Cyan
+                vec3(1.0, 0.58, 0.6),   // Pink
                 aActivity
             );
+            
+            vGlow = pulse;
         }
     `;
 
     const nodeFragmentShader = `
         varying vec3 vColor;
+        varying float vGlow;
         
         void main() {
             vec2 center = gl_PointCoord - vec2(0.5);
             float dist = length(center);
             
-            float core = smoothstep(0.5, 0.3, dist);
-            float glow = smoothstep(0.5, 0.0, dist) * 0.3;
+            // Sharper core, stronger glow
+            float core = smoothstep(0.5, 0.2, dist);
+            float glow = smoothstep(0.5, 0.0, dist) * 0.6; // Stronger glow
             float alpha = core + glow;
             
-            vec3 finalColor = vColor * (1.0 + core * 0.5);
+            // Brighter, more visible
+            vec3 finalColor = vColor * (1.0 + core * 1.5);
             
-            gl_FragColor = vec4(finalColor, alpha);
+            gl_FragColor = vec4(finalColor, alpha * 0.9); // More opaque
         }
     `;
 
@@ -126,7 +134,7 @@ export function initThreeJS() {
         uniforms: {
             uTime: { value: 0 },
             uMouse: { value: new THREE.Vector2(0, 0) },
-            uSize: { value: 40.0 }
+            uSize: { value: 60.0 } // BIGGER nodes (was 40)
         },
         vertexShader: nodeVertexShader,
         fragmentShader: nodeFragmentShader,
@@ -177,11 +185,13 @@ export function initThreeJS() {
 
     console.log(`Created ${connections.length} connections between ${nodeCount} nodes`);
 
-    // Create base connection lines (static)
+    // Create base connection lines with custom shader for thickness
     const linePositions = new Float32Array(connections.length * 6);
+    const lineStrengths = new Float32Array(connections.length * 2);
 
     connections.forEach((conn, i) => {
         const i6 = i * 6;
+        const i2 = i * 2;
         
         linePositions[i6] = conn.start.x;
         linePositions[i6 + 1] = conn.start.y;
@@ -190,15 +200,46 @@ export function initThreeJS() {
         linePositions[i6 + 3] = conn.end.x;
         linePositions[i6 + 4] = conn.end.y;
         linePositions[i6 + 5] = conn.end.z;
+        
+        lineStrengths[i2] = conn.strength;
+        lineStrengths[i2 + 1] = conn.strength;
     });
 
     const connectionsGeometry = new THREE.BufferGeometry();
     connectionsGeometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+    connectionsGeometry.setAttribute('aStrength', new THREE.BufferAttribute(lineStrengths, 1));
 
-    const connectionsMaterial = new THREE.LineBasicMaterial({
-        color: 0x49c5b6,
+    // Use shader for variable thickness based on strength
+    const connectionVertexShader = `
+        attribute float aStrength;
+        varying float vStrength;
+        
+        void main() {
+            vStrength = aStrength;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `;
+
+    const connectionFragmentShader = `
+        uniform vec3 uColor;
+        uniform float uOpacity;
+        varying float vStrength;
+        
+        void main() {
+            // Brighter connections based on strength
+            float opacity = uOpacity * (0.5 + vStrength * 0.5);
+            gl_FragColor = vec4(uColor, opacity);
+        }
+    `;
+
+    const connectionsMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+            uColor: { value: new THREE.Color(0x49c5b6) },
+            uOpacity: { value: 0.25 } // MUCH brighter (was 0.08)
+        },
+        vertexShader: connectionVertexShader,
+        fragmentShader: connectionFragmentShader,
         transparent: true,
-        opacity: 0.08,
         blending: THREE.AdditiveBlending
     });
 
@@ -247,8 +288,8 @@ export function initThreeJS() {
     function activateNode(node) {
         node.activation = 1.0;
         
-        // Limit propagation
-        const maxNewSignals = Math.min(node.connections.length, 2);
+        // More propagation for more activity
+        const maxNewSignals = Math.min(node.connections.length, 3);
         
         for (let i = 0; i < maxNewSignals; i++) {
             if (activeSignals.length >= maxActiveSignals) break;
@@ -273,14 +314,14 @@ export function initThreeJS() {
         }
     }
 
-    // Start with initial signals
-    for (let i = 0; i < 3; i++) {
+    // Start with more initial signals
+    for (let i = 0; i < 5; i++) {
         const randomNode = nodeArray[Math.floor(Math.random() * nodeArray.length)];
         activateNode(randomNode);
     }
 
     // ===========================
-    // POOLED SIGNAL GEOMETRY
+    // POOLED SIGNAL GEOMETRY (THICKER SIGNALS)
     // ===========================
     const maxSignalLines = 30;
     const signalGeometries = [];
@@ -294,7 +335,8 @@ export function initThreeJS() {
         const material = new THREE.LineBasicMaterial({
             transparent: true,
             blending: THREE.AdditiveBlending,
-            opacity: 0
+            opacity: 0,
+            linewidth: 3 // Thicker lines (though this may not work in WebGL)
         });
         
         const line = new THREE.Line(geometry, material);
@@ -321,8 +363,8 @@ export function initThreeJS() {
                 const geometry = signalGeometries[signalIndex];
                 const positions = geometry.attributes.position.array;
                 
-                // Calculate trail
-                const trailLength = 0.15;
+                // LONGER trail for better visibility
+                const trailLength = 0.25; // 25% of connection (was 15%)
                 const start = Math.max(0, signal.progress - trailLength);
                 const end = signal.progress;
                 
@@ -340,9 +382,9 @@ export function initThreeJS() {
                 
                 geometry.attributes.position.needsUpdate = true;
                 
-                // Update material
+                // BRIGHTER signals
                 line.material.color.copy(signal.color);
-                line.material.opacity = 0.8;
+                line.material.opacity = 1.0; // Full opacity (was 0.8)
                 line.rotation.copy(nodes.rotation);
                 
                 signalIndex++;
@@ -351,7 +393,7 @@ export function initThreeJS() {
     }
 
     // ===========================
-    // MOUSE INTERACTION (NO CLICK)
+    // MOUSE INTERACTION
     // ===========================
     const mouse = new THREE.Vector2();
     
@@ -359,9 +401,6 @@ export function initThreeJS() {
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     });
-
-    // CLICK DISABLED FOR TESTING
-    console.log('Click interaction disabled for performance testing');
 
     // ===========================
     // ANIMATION LOOP
