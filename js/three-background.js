@@ -1,6 +1,5 @@
 // ===========================
 // THREE.JS NEURAL NETWORK BACKGROUND
-// ENHANCED VISIBILITY VERSION
 // ===========================
 import * as THREE from 'three';
 
@@ -23,11 +22,10 @@ export function initThreeJS() {
     // NEURAL NETWORK PARAMETERS
     // ===========================
     const nodeCount = 300;
-    const connectionDistance = 4.0; // Increased for more connections
-    const maxConnections = 10; // More connections per node
-    const signalSpeed = 1.5; // Slightly slower for visibility
-    const maxActiveSignals = 25;
-    const autoSignalInterval = 2500;
+    const connectionDistance = 3.5;
+    const maxConnections = 8;
+    const signalSpeed = 1.5; // Speed of signal propagation through connections
+    const activationProbability = 0.02; // Chance per frame that a node "fires"
 
     // ===========================
     // CREATE NODES (NEURONS)
@@ -37,11 +35,13 @@ export function initThreeJS() {
     const nodeScales = new Float32Array(nodeCount);
     const nodeActivity = new Float32Array(nodeCount);
 
+    // Store node data for connection calculation and signal propagation
     const nodeArray = [];
 
     for (let i = 0; i < nodeCount; i++) {
         const i3 = i * 3;
         
+        // Distribute nodes in a large cube
         const x = (Math.random() - 0.5) * 25;
         const y = (Math.random() - 0.5) * 25;
         const z = (Math.random() - 0.5) * 25;
@@ -53,11 +53,11 @@ export function initThreeJS() {
         nodeArray.push({ 
             x, y, z, 
             index: i,
-            connections: [],
-            activation: 0.0
+            connections: [], // Will store connected node indices
+            activation: 0.0  // Current activation level (0-1)
         });
         
-        nodeScales[i] = 0.8 + Math.random() * 0.4; // Bigger nodes
+        nodeScales[i] = 0.5 + Math.random() * 0.5;
         nodeActivity[i] = Math.random();
     }
 
@@ -75,18 +75,18 @@ export function initThreeJS() {
         attribute float aActivity;
         
         varying vec3 vColor;
-        varying float vGlow;
+        varying float vActivity;
         
         void main() {
             vec4 modelPosition = modelMatrix * vec4(position, 1.0);
             
-            // Mouse interaction
+            // Mouse interaction - nodes get pushed away
             vec2 mousePos = uMouse * 15.0;
             float distanceToMouse = distance(modelPosition.xy, mousePos);
             float pushForce = smoothstep(5.0, 0.0, distanceToMouse);
             modelPosition.xyz += normalize(modelPosition.xyz - vec3(mousePos, 0.0)) * pushForce * 2.0;
             
-            // Slight floating
+            // Slight floating animation
             modelPosition.y += sin(uTime * 0.5 + position.x * 0.5) * 0.3;
             modelPosition.x += cos(uTime * 0.3 + position.y * 0.5) * 0.3;
             
@@ -95,38 +95,39 @@ export function initThreeJS() {
             
             gl_Position = projectedPosition;
             
-            // Larger, more visible nodes
+            // Size based on activity and distance
             float pulse = sin(uTime * 2.0 + aActivity * 10.0) * 0.3 + 0.7;
             gl_PointSize = uSize * aScale * pulse * (1.0 / -viewPosition.z);
             
-            // Brighter colors
+            // Color based on activity
+            vActivity = aActivity;
             vColor = mix(
                 vec3(0.29, 0.77, 0.71), // Cyan
                 vec3(1.0, 0.58, 0.6),   // Pink
                 aActivity
             );
-            
-            vGlow = pulse;
         }
     `;
 
+    // Custom fragment shader for nodes
     const nodeFragmentShader = `
         varying vec3 vColor;
-        varying float vGlow;
+        varying float vActivity;
         
         void main() {
+            // Circular node with glow
             vec2 center = gl_PointCoord - vec2(0.5);
             float dist = length(center);
             
-            // Sharper core, stronger glow
-            float core = smoothstep(0.5, 0.2, dist);
-            float glow = smoothstep(0.5, 0.0, dist) * 0.6; // Stronger glow
+            // Sharp core with soft glow
+            float core = smoothstep(0.5, 0.3, dist);
+            float glow = smoothstep(0.5, 0.0, dist) * 0.3;
             float alpha = core + glow;
             
-            // Brighter, more visible
-            vec3 finalColor = vColor * (1.0 + core * 1.5);
+            // Brighter center
+            vec3 finalColor = vColor * (1.0 + core * 0.5);
             
-            gl_FragColor = vec4(finalColor, alpha * 0.9); // More opaque
+            gl_FragColor = vec4(finalColor, alpha);
         }
     `;
 
@@ -134,7 +135,7 @@ export function initThreeJS() {
         uniforms: {
             uTime: { value: 0 },
             uMouse: { value: new THREE.Vector2(0, 0) },
-            uSize: { value: 60.0 } // BIGGER nodes (was 40)
+            uSize: { value: 40.0 }
         },
         vertexShader: nodeVertexShader,
         fragmentShader: nodeFragmentShader,
@@ -147,8 +148,10 @@ export function initThreeJS() {
     scene.add(nodes);
 
     // ===========================
-    // CREATE CONNECTIONS
+    // CREATE CONNECTIONS (SYNAPSES)
     // ===========================
+    
+    // Calculate connections between nearby nodes
     const connections = [];
     
     for (let i = 0; i < nodeArray.length; i++) {
@@ -165,19 +168,22 @@ export function initThreeJS() {
             const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
             
             if (distance < connectionDistance) {
-                const connection = {
-                    startNode: nodeA,
-                    endNode: nodeB,
-                    start: new THREE.Vector3(nodeA.x, nodeA.y, nodeA.z),
-                    end: new THREE.Vector3(nodeB.x, nodeB.y, nodeB.z),
+                const connectionData = {
+                    startNode: i,
+                    endNode: j,
+                    start: { x: nodeA.x, y: nodeA.y, z: nodeA.z },
+                    end: { x: nodeB.x, y: nodeB.y, z: nodeB.z },
                     distance: distance,
                     strength: 1.0 - (distance / connectionDistance),
-                    activeSignals: []
+                    signals: [] // Array to hold active signals on this connection
                 };
                 
-                connections.push(connection);
-                nodeA.connections.push(connection);
-                nodeB.connections.push(connection);
+                connections.push(connectionData);
+                
+                // Store connection indices in nodes for signal propagation
+                nodeA.connections.push(connections.length - 1);
+                nodeB.connections.push(connections.length - 1);
+                
                 connectionCount++;
             }
         }
@@ -185,61 +191,47 @@ export function initThreeJS() {
 
     console.log(`Created ${connections.length} connections between ${nodeCount} nodes`);
 
-    // Create base connection lines with custom shader for thickness
-    const linePositions = new Float32Array(connections.length * 6);
+    // Create line geometry for all connections with color attribute
+    const linePositions = new Float32Array(connections.length * 6); // 2 points * 3 coords
+    const lineColors = new Float32Array(connections.length * 6); // 2 points * 3 color channels
     const lineStrengths = new Float32Array(connections.length * 2);
 
     connections.forEach((conn, i) => {
         const i6 = i * 6;
         const i2 = i * 2;
         
+        // Start point
         linePositions[i6] = conn.start.x;
         linePositions[i6 + 1] = conn.start.y;
         linePositions[i6 + 2] = conn.start.z;
         
+        // End point
         linePositions[i6 + 3] = conn.end.x;
         linePositions[i6 + 4] = conn.end.y;
         linePositions[i6 + 5] = conn.end.z;
         
+        // Initial color (cyan)
+        lineColors[i6] = 0.29;
+        lineColors[i6 + 1] = 0.77;
+        lineColors[i6 + 2] = 0.71;
+        lineColors[i6 + 3] = 0.29;
+        lineColors[i6 + 4] = 0.77;
+        lineColors[i6 + 5] = 0.71;
+        
+        // Strength
         lineStrengths[i2] = conn.strength;
         lineStrengths[i2 + 1] = conn.strength;
     });
 
     const connectionsGeometry = new THREE.BufferGeometry();
     connectionsGeometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+    connectionsGeometry.setAttribute('color', new THREE.BufferAttribute(lineColors, 3));
     connectionsGeometry.setAttribute('aStrength', new THREE.BufferAttribute(lineStrengths, 1));
 
-    // Use shader for variable thickness based on strength
-    const connectionVertexShader = `
-        attribute float aStrength;
-        varying float vStrength;
-        
-        void main() {
-            vStrength = aStrength;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-    `;
-
-    const connectionFragmentShader = `
-        uniform vec3 uColor;
-        uniform float uOpacity;
-        varying float vStrength;
-        
-        void main() {
-            // Brighter connections based on strength
-            float opacity = uOpacity * (0.5 + vStrength * 0.5);
-            gl_FragColor = vec4(uColor, opacity);
-        }
-    `;
-
-    const connectionsMaterial = new THREE.ShaderMaterial({
-        uniforms: {
-            uColor: { value: new THREE.Color(0x49c5b6) },
-            uOpacity: { value: 0.25 } // MUCH brighter (was 0.08)
-        },
-        vertexShader: connectionVertexShader,
-        fragmentShader: connectionFragmentShader,
+    const connectionsMaterial = new THREE.LineBasicMaterial({
+        vertexColors: true,
         transparent: true,
+        opacity: 0.3,
         blending: THREE.AdditiveBlending
     });
 
@@ -247,149 +239,58 @@ export function initThreeJS() {
     scene.add(connectionLines);
 
     // ===========================
-    // SIGNAL SYSTEM
+    // SIGNAL PROPAGATION SYSTEM
     // ===========================
     
+    // Signal class to track current flowing through connections
     class Signal {
-        constructor(connection, direction = 1, color = 0x49c5b6) {
-            this.connection = connection;
-            this.progress = 0;
-            this.direction = direction;
+        constructor(connectionIndex, direction, color) {
+            this.connectionIndex = connectionIndex;
+            this.progress = 0.0; // 0 to 1 along the connection
+            this.direction = direction; // 'forward' or 'backward'
             this.speed = signalSpeed;
-            this.color = new THREE.Color(color);
-            this.active = true;
+            this.color = color; // THREE.Color
+            this.intensity = 1.0; // Brightness multiplier
         }
         
         update(deltaTime) {
-            if (!this.active) return false;
+            this.progress += this.speed * deltaTime;
             
-            this.progress += this.speed * deltaTime * this.direction;
-            
-            if (this.progress >= 1.0 || this.progress <= 0) {
-                this.active = false;
-                
-                const targetNode = this.direction > 0 ? 
-                    this.connection.endNode : 
-                    this.connection.startNode;
-                
-                if (activeSignals.length < maxActiveSignals) {
-                    activateNode(targetNode);
-                }
-                
-                return false;
+            // Fade out as it reaches the end
+            if (this.progress > 0.8) {
+                this.intensity = (1.0 - this.progress) / 0.2;
             }
             
-            return true;
+            return this.progress >= 1.0; // Return true when complete
         }
     }
-
+    
     const activeSignals = [];
-
-    function activateNode(node) {
+    
+    // Function to fire a node and propagate signals
+    function fireNode(nodeIndex) {
+        const node = nodeArray[nodeIndex];
         node.activation = 1.0;
         
-        // More propagation for more activity
-        const maxNewSignals = Math.min(node.connections.length, 3);
-        
-        for (let i = 0; i < maxNewSignals; i++) {
-            if (activeSignals.length >= maxActiveSignals) break;
+        // Send signals through all connections from this node
+        node.connections.forEach(connIndex => {
+            const conn = connections[connIndex];
             
-            const conn = node.connections[i];
-            const direction = conn.startNode === node ? 1 : -1;
-            const color = Math.random() > 0.3 ? 0x49c5b6 : 0xFF9398;
+            // Determine direction and color
+            const isStartNode = conn.startNode === nodeIndex;
+            const direction = isStartNode ? 'forward' : 'backward';
+            const color = isStartNode ? 
+                new THREE.Color(0x49c5b6) : // Forward = Cyan
+                new THREE.Color(0xFF9398);  // Backward = Pink
             
-            const signal = new Signal(conn, direction, color);
-            conn.activeSignals.push(signal);
-            activeSignals.push(signal);
-        }
+            // Create new signal
+            activeSignals.push(new Signal(connIndex, direction, color));
+        });
     }
-
-    // Auto-fire
-    let lastAutoFire = 0;
-    function autoFireSignal(currentTime) {
-        if (currentTime - lastAutoFire > autoSignalInterval && activeSignals.length < maxActiveSignals) {
-            const randomNode = nodeArray[Math.floor(Math.random() * nodeArray.length)];
-            activateNode(randomNode);
-            lastAutoFire = currentTime;
-        }
-    }
-
-    // Start with more initial signals
-    for (let i = 0; i < 5; i++) {
-        const randomNode = nodeArray[Math.floor(Math.random() * nodeArray.length)];
-        activateNode(randomNode);
-    }
-
-    // ===========================
-    // POOLED SIGNAL GEOMETRY (THICKER SIGNALS)
-    // ===========================
-    const maxSignalLines = 30;
-    const signalGeometries = [];
-    const signalMeshes = [];
     
-    for (let i = 0; i < maxSignalLines; i++) {
-        const geometry = new THREE.BufferGeometry();
-        const positions = new Float32Array(6);
-        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        
-        const material = new THREE.LineBasicMaterial({
-            transparent: true,
-            blending: THREE.AdditiveBlending,
-            opacity: 0,
-            linewidth: 3 // Thicker lines (though this may not work in WebGL)
-        });
-        
-        const line = new THREE.Line(geometry, material);
-        scene.add(line);
-        
-        signalGeometries.push(geometry);
-        signalMeshes.push(line);
-    }
-
-    function updateSignalVisualization() {
-        let signalIndex = 0;
-        
-        // Hide all lines first
-        signalMeshes.forEach(mesh => {
-            mesh.material.opacity = 0;
-        });
-        
-        // Update only active signals
-        for (const connection of connections) {
-            for (const signal of connection.activeSignals) {
-                if (!signal.active || signalIndex >= maxSignalLines) continue;
-                
-                const line = signalMeshes[signalIndex];
-                const geometry = signalGeometries[signalIndex];
-                const positions = geometry.attributes.position.array;
-                
-                // LONGER trail for better visibility
-                const trailLength = 0.25; // 25% of connection (was 15%)
-                const start = Math.max(0, signal.progress - trailLength);
-                const end = signal.progress;
-                
-                const connStart = connection.start;
-                const connEnd = connection.end;
-                
-                // Update positions
-                positions[0] = connStart.x + (connEnd.x - connStart.x) * start;
-                positions[1] = connStart.y + (connEnd.y - connStart.y) * start;
-                positions[2] = connStart.z + (connEnd.z - connStart.z) * start;
-                
-                positions[3] = connStart.x + (connEnd.x - connStart.x) * end;
-                positions[4] = connStart.y + (connEnd.y - connStart.y) * end;
-                positions[5] = connStart.z + (connEnd.z - connStart.z) * end;
-                
-                geometry.attributes.position.needsUpdate = true;
-                
-                // BRIGHTER signals
-                line.material.color.copy(signal.color);
-                line.material.opacity = 1.0; // Full opacity (was 0.8)
-                line.rotation.copy(nodes.rotation);
-                
-                signalIndex++;
-            }
-        }
+    // Initialize with some random activations
+    for (let i = 0; i < 5; i++) {
+        fireNode(Math.floor(Math.random() * nodeCount));
     }
 
     // ===========================
@@ -416,45 +317,98 @@ export function initThreeJS() {
         requestAnimationFrame(animate);
         
         const elapsedTime = clock.getElapsedTime();
-        const deltaTime = Math.min(clock.getDelta(), 0.1);
+        const deltaTime = clock.getDelta();
         
-        // Update nodes
+        // Update node uniforms
         nodesMaterial.uniforms.uTime.value = elapsedTime;
         nodesMaterial.uniforms.uMouse.value = mouse;
         
-        // Rotate network
+        // Slowly rotate the entire network
         nodes.rotation.y = elapsedTime * 0.02;
         nodes.rotation.x = Math.sin(elapsedTime * 0.1) * 0.1;
+        
         connectionLines.rotation.copy(nodes.rotation);
+        
+        // Decay node activations
+        nodeArray.forEach(node => {
+            node.activation *= 0.95; // Decay
+        });
+        
+        // Random node firing (forward propagation)
+        if (Math.random() < activationProbability) {
+            fireNode(Math.floor(Math.random() * nodeCount));
+        }
+        
+        // Update all active signals and render them on connections
+        const colorArray = connectionsGeometry.attributes.color.array;
+        
+        // Reset all connections to base cyan color with low opacity
+        for (let i = 0; i < connections.length; i++) {
+            const i6 = i * 6;
+            const baseIntensity = 0.2;
+            
+            // Start point
+            colorArray[i6] = 0.29 * baseIntensity;
+            colorArray[i6 + 1] = 0.77 * baseIntensity;
+            colorArray[i6 + 2] = 0.71 * baseIntensity;
+            
+            // End point
+            colorArray[i6 + 3] = 0.29 * baseIntensity;
+            colorArray[i6 + 4] = 0.77 * baseIntensity;
+            colorArray[i6 + 5] = 0.71 * baseIntensity;
+        }
         
         // Update signals
         for (let i = activeSignals.length - 1; i >= 0; i--) {
             const signal = activeSignals[i];
-            if (!signal.update(deltaTime)) {
+            const isComplete = signal.update(deltaTime);
+            
+            if (isComplete) {
+                // Signal reached end, activate the target node
+                const conn = connections[signal.connectionIndex];
+                const targetNode = signal.direction === 'forward' ? conn.endNode : conn.startNode;
+                
+                // Chance to propagate further (creates chain reactions)
+                if (Math.random() < 0.3) {
+                    fireNode(targetNode);
+                }
+                
+                // Remove signal
                 activeSignals.splice(i, 1);
+                continue;
+            }
+            
+            // Render signal on connection
+            const connIndex = signal.connectionIndex;
+            const i6 = connIndex * 6;
+            
+            // Calculate signal position and glow effect
+            const progress = signal.progress;
+            const glowRadius = 0.15; // How much of the line glows
+            
+            // Apply glow to line segments near the signal
+            for (let segment = 0; segment < 2; segment++) {
+                const segmentProgress = segment === 0 ? 0 : 1;
+                const distanceToSignal = Math.abs(segmentProgress - progress);
+                
+                if (distanceToSignal < glowRadius) {
+                    // Calculate glow intensity (gaussian-like falloff)
+                    const glowStrength = (1.0 - distanceToSignal / glowRadius) * signal.intensity;
+                    
+                    const baseIndex = i6 + segment * 3;
+                    
+                    // Blend signal color with base color
+                    colorArray[baseIndex] += signal.color.r * glowStrength * 2.0;
+                    colorArray[baseIndex + 1] += signal.color.g * glowStrength * 2.0;
+                    colorArray[baseIndex + 2] += signal.color.b * glowStrength * 2.0;
+                }
             }
         }
         
-        // Clean up inactive signals from connections
-        for (const connection of connections) {
-            connection.activeSignals = connection.activeSignals.filter(s => s.active);
-        }
+        // Mark colors as needing update
+        connectionsGeometry.attributes.color.needsUpdate = true;
         
-        // Update node activation
-        for (const node of nodeArray) {
-            if (node.activation > 0) {
-                node.activation -= deltaTime * 0.5;
-                node.activation = Math.max(0, node.activation);
-            }
-        }
-        
-        // Update signal visualization
-        updateSignalVisualization();
-        
-        // Auto-fire
-        autoFireSignal(elapsedTime * 1000);
-        
-        // Camera
+        // Camera movement with mouse and scroll
         camera.position.x = Math.sin(mouse.x * 0.3) * 3;
         camera.position.y = Math.cos(mouse.y * 0.3) * 3 - scrollY * 0.002;
         camera.lookAt(scene.position);
