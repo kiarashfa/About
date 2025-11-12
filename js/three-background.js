@@ -3,7 +3,7 @@
 // ===========================
 import * as THREE from "three";
 
-export function initNeuralNetworkBackground() {
+export function initThreeJS() {  // ← Fixed: Changed back to initThreeJS()
   // --- SCENE, CAMERA, RENDERER ---
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(
